@@ -1,0 +1,15 @@
+# 선택(고급) 의존성 — 설치하면 폴백 엔진이 원본 프로젝트의 실제 모델로 자동 승격됩니다.
+# 기본 requirements.txt 만으로도 전체 대시보드는 폴백 엔진으로 동작합니다.
+
+# ── 계약서 분류기: KLUE-RoBERTa 파인튜닝/추론 ──
+torch
+transformers
+datasets            # train_classifier.py 학습용
+scikit-learn        # train_classifier.py 학습/평가용
+
+# ── 법률 근거 검색(RAG): nlpai-lab/KoE5 임베딩 (설치만 하면 자동 다운로드·승격) ──
+sentence-transformers
+
+# ── 슬롯 추출 & 계약서 설명 생성: Gemini (GOOGLE_API_KEY 필요) ──
+google-genai
+python-dotenv       # backend/.env 자동 로드

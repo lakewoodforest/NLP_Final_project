@@ -1,0 +1,14 @@
+# Render Blueprint — 이 파일이 있으면 Render 가 자동으로 서비스를 구성합니다.
+# 대시보드에서 New + → Blueprint → 이 저장소 선택 시 사용됩니다.
+services:
+  - type: web
+    name: hanip-budongsan
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    envVars:
+      # (선택) Gemini 설명·슬롯추출을 켜려면 Render 대시보드에서 값 입력.
+      # 비워두면 규칙기반/템플릿 폴백으로 동작합니다.
+      - key: GOOGLE_API_KEY
+        sync: false

@@ -1,0 +1,12 @@
+# ── 필수 (이것만으로 전체 대시보드 동작 · 폴백 엔진 사용) ──
+fastapi>=0.110
+uvicorn[standard]>=0.29
+pandas>=2.0
+python-multipart>=0.0.9
+pymupdf>=1.24            # PDF 조항 분리 (프로젝트 ② pdf_utils 포팅)
+
+# ── 선택: 설치하면 폴백 엔진이 원본 프로젝트의 실제 모델로 자동 승격 ──
+# torch                  # + backend/model/clause_classifier/ 가중치 → KLUE-RoBERTa 분류기
+# transformers
+# sentence-transformers  # → nlpai-lab/KoE5 임베딩 RAG (min_score 0.45)
+# google-genai           # + GOOGLE_API_KEY → Gemini 슬롯 추출

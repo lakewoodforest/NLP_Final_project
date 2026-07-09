@@ -1,0 +1,8 @@
+node_modules/
+dist/
+__pycache__/
+*.pyc
+.venv/
+backend/model/
+backend/data/law_embeddings*
+.env

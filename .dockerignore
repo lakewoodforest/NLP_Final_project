@@ -1,0 +1,11 @@
+**/node_modules
+**/dist
+**/__pycache__
+**/*.pyc
+.git
+.venv
+*.log
+.env
+backend/model
+backend/data/law_embeddings*
+.DS_Store
