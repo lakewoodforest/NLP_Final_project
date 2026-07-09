@@ -19,6 +19,7 @@ class SearchBody(BaseModel):
     보증금_최대: float | None = None
     기타: str | None = None
     top_n: int = 12
+    sort: str | None = None
 
 
 @router.get("/meta")
@@ -28,6 +29,6 @@ def meta():
 
 @router.post("/search")
 def search(body: SearchBody):
-    slots = body.model_dump(exclude={"top_n"}, exclude_none=True)
+    slots = body.model_dump(exclude={"top_n", "sort"}, exclude_none=True)
     slots = {k: (v if v != "" else None) for k, v in slots.items()}
-    return search_response(slots, top_n=body.top_n)
+    return search_response(slots, top_n=body.top_n, sort=body.sort)

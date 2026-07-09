@@ -32,6 +32,14 @@ export default function Search() {
   const [slots, setSlots] = useState(null);
   const [res, setRes] = useState(null);
   const [err, setErr] = useState("");
+  const [sort, setSort] = useState("");
+
+  const doSearch = async (slotsObj, sortVal) => {
+    const body = buildBody(slotsObj);
+    if (sortVal) body.sort = sortVal;
+    const r = await api.post("/listings/search", body);
+    setRes(r);
+  };
 
   const run = async (text) => {
     const t = (text ?? utter).trim();
@@ -42,14 +50,19 @@ export default function Search() {
       const ex = await api.post("/slots/extract", { utterance: t });
       setIntent(ex.intent);
       setSlots(ex.slots || {});
-      if (ex.intent !== "잡담") {
-        const r = await api.post("/listings/search", buildBody(ex.slots || {}));
-        setRes(r);
-      }
+      if (ex.intent !== "잡담") await doSearch(ex.slots || {}, sort);
     } catch (e) {
       setErr(String(e.message));
     }
     setLoading(false);
+  };
+
+  const changeSort = async (e) => {
+    const v = e.target.value;
+    setSort(v);
+    if (slots && intent !== "잡담") {
+      try { await doSearch(slots, v); } catch (er) { setErr(String(er.message)); }
+    }
   };
 
   const slotEntries = slots ? Object.entries(slots).filter(([, v]) => v !== null && v !== "") : [];
@@ -107,10 +120,21 @@ export default function Search() {
       {/* 결과 */}
       {!loading && res && (
         <>
-          <p style={{ marginBottom: 10 }}>
-            <span className="result-cnt">{fmt(res.total)}</span>{" "}
-            <span className="muted">건이 조건에 맞아요 · 상위 {res.items.length}건 표시</span>
-          </p>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 10, flexWrap: "wrap" }}>
+            <p style={{ margin: 0 }}>
+              <span className="result-cnt">{fmt(res.total)}</span>{" "}
+              <span className="muted">건이 조건에 맞아요 · 상위 {res.items.length}건 표시</span>
+            </p>
+            {res.items.length > 1 && (
+              <select value={sort} onChange={changeSort}
+                style={{ padding: "6px 10px", borderRadius: 8, border: "1px solid var(--line)", background: "#fff", fontSize: 13 }}>
+                <option value="">추천순</option>
+                <option value="deposit">보증금 낮은순</option>
+                <option value="rent">월세 낮은순</option>
+                <option value="area">면적 넓은순</option>
+              </select>
+            )}
+          </div>
           {res.items.length === 0 ? (
             <div className="empty">조건에 맞는 매물이 없어요. 조건을 조금 완화해 보세요.</div>
           ) : (

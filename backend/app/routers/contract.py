@@ -62,6 +62,7 @@ def _analyze_pdf(path: str) -> dict:
             item["explanation"] = exp["text"]
         item.pop("neighbors", None)  # 분석 응답은 근거 조문 중심으로 슬림하게
         out.append(item)
+    out.sort(key=lambda x: -x["label_id"])  # 위험 > 주의 > 정상 순으로 정렬
     counts = {l: sum(1 for x in out if x["label_id"] == l) for l in (0, 1, 2)}
     return {"n_clauses": len(out), "counts": counts, "clauses": out,
             "engines": {"classifier": clause_classifier.engine_name(),

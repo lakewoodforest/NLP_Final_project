@@ -93,8 +93,18 @@ def search_listings(slots: dict) -> tuple[pd.DataFrame, str]:
     return result, rank_engine
 
 
-def search_response(slots: dict, top_n: int = 12) -> dict:
+_SORTS = {
+    "deposit": ("보증금", True),   # 보증금 낮은순
+    "rent": ("월세", True),        # 월세 낮은순
+    "area": ("평수", False),       # 면적 넓은순
+}
+
+
+def search_response(slots: dict, top_n: int = 12, sort: str | None = None) -> dict:
     df, rank_engine = search_listings(slots)
+    if sort in _SORTS and not df.empty:
+        col, asc = _SORTS[sort]
+        df = df.sort_values(col, ascending=asc)
     items = json.loads(df.head(top_n).to_json(orient="records", force_ascii=False))
     region_counts = [
         {"name": r, "count": int((df["지역"] == r).sum())}

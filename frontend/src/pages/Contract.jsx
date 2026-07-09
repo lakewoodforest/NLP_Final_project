@@ -85,19 +85,31 @@ export default function Contract() {
             onChange={(e) => analyzeFile(e.target.files?.[0])} />
         </div>
         {aErr && <p className="note mt">분석 실패: {aErr}</p>}
-        {analysis && (
-          <div className="mt">
-            <p style={{ marginBottom: 10 }}>
-              조항 {analysis.n_clauses}건 검토 →{" "}
-              {[0, 1, 2].map((l) => (
-                <span key={l} style={{ marginRight: 8 }}>
-                  <Stamp l={l} /> {analysis.counts[l] ?? analysis.counts[String(l)] ?? 0}
-                </span>
-              ))}
-            </p>
-            {analysis.clauses.map((c, i) => <ClauseResult key={i} c={c} />)}
-          </div>
-        )}
+        {analysis && (() => {
+          const cnt = (l) => analysis.counts[l] ?? analysis.counts[String(l)] ?? 0;
+          const danger = cnt(2), warn = cnt(1);
+          const tone = danger > 0
+            ? { bg: "var(--red-soft)", bd: "var(--red)", msg: `위험 조항 ${danger}건${warn ? ` · 주의 ${warn}건` : ""} 발견 — 계약 전 반드시 확인하세요.` }
+            : warn > 0
+            ? { bg: "var(--amber-soft)", bd: "var(--amber)", msg: `주의가 필요한 조항이 ${warn}건 있어요. 내용을 확인해 보세요.` }
+            : { bg: "var(--green-soft)", bd: "var(--green)", msg: "특별히 위험하거나 주의가 필요한 조항은 발견되지 않았습니다." };
+          return (
+            <div className="mt">
+              <div style={{ padding: "12px 16px", borderRadius: 12, background: tone.bg, borderLeft: `4px solid ${tone.bd}`, marginBottom: 14, fontWeight: 600 }}>
+                {tone.msg}
+              </div>
+              <p className="muted" style={{ marginBottom: 10 }}>
+                총 {analysis.n_clauses}개 조항 ·{" "}
+                {[2, 1, 0].map((l) => (
+                  <span key={l} style={{ marginRight: 8 }}>
+                    <Stamp l={l} /> {cnt(l)}
+                  </span>
+                ))}
+              </p>
+              {analysis.clauses.map((c, i) => <ClauseResult key={i} c={c} />)}
+            </div>
+          );
+        })()}
       </Card>
 
       <Card className="mb">
