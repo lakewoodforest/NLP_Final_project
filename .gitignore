@@ -6,3 +6,8 @@ __pycache__/
 backend/model/
 backend/data/law_embeddings*
 .env
+
+# OS / 에디터 / 빌드 임시 파일
+.DS_Store
+.claude/
+frontend/*.timestamp-*.mjs
