@@ -37,3 +37,13 @@ export function Head({ eyebrow, title, lead }) {
 
 export const fmt = (n) => Number(n).toLocaleString("ko-KR");
 export const tipStyle = { fontSize: 12, borderRadius: 8, border: "1px solid #DCDED6" };
+
+export function Star({ on = false, size = 18 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24"
+      fill={on ? "#f5a623" : "none"} stroke={on ? "#f5a623" : "currentColor"}
+      strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 3.5l2.7 5.4 6 .9-4.3 4.2 1 6-5.4-2.8-5.4 2.8 1-6L3.3 9.8l6-.9z" />
+    </svg>
+  );
+}

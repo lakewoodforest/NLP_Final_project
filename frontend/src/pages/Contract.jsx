@@ -66,13 +66,13 @@ export default function Contract() {
   );
 
   return (
-    <section>
+    <section className="tool-page contract-page">
       <Head
         title="계약서 특약 검토"
         lead="계약서 PDF를 올리면 조항을 정상·주의·위험으로 나누고, 주의·위험 조항에는 관련 법 조문 근거와 쉬운 설명을 붙여드립니다."
       />
 
-      <Card className="mb">
+      <Card className="mb contract-panel upload-panel">
         <h3>계약서 PDF 분석</h3>
         <div className="wrap">
           <button className="btn" onClick={analyzeSample} disabled={busy}>
@@ -112,7 +112,7 @@ export default function Contract() {
         })()}
       </Card>
 
-      <Card className="mb">
+      <Card className="mb contract-panel judge-panel">
         <h3>특약 조항 간이 판정</h3>
         <textarea rows={2} value={demo} onChange={(e) => setDemo(e.target.value)}
           placeholder="예: 임차인은 어떠한 경우에도 보증금 반환을 요구할 수 없다." />
@@ -143,7 +143,7 @@ export default function Contract() {
       </Card>
 
       {laws.length > 0 && (
-        <Card className="mb">
+        <Card className="mb contract-panel laws-panel">
           <h3>참고 법령</h3>
           <p className="muted" style={{ marginBottom: 12 }}>
             검토에 활용되는 주택임대차 관련 주요 법 조문입니다.

@@ -11,3 +11,7 @@ backend/data/law_embeddings*
 .DS_Store
 .claude/
 frontend/*.timestamp-*.mjs
+
+# 원본 에셋 소스(잘라내기 전 원본) — 배포엔 불필요
+frontend/public/ChatGPT*
+frontend/public/_img_*

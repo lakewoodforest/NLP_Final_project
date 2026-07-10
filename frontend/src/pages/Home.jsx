@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Star } from "../components/ui.jsx";
 
 /* ── 작은 아이콘 ── */
 const P = {
@@ -23,71 +24,34 @@ function Ic({ d, w = 18, c }) {
 
 const HOT = ["서울 마포구 원룸", "강남구 투룸", "역세권 오피스텔", "반려동물 가능", "보증금 1억 이하"];
 
+const U = (id) => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=640&q=70`;
 const RECS = [
-  { nm: "마포구 서교동 원룸", pr: "보증금 1억 / 월세 50만", cs: ["역세권", "풀옵션", "즉시입주"], badge: "추천", b: 0, emoji: "🛏️", g: "linear-gradient(135deg,#dbe8fb,#c3d6f2)", q: "마포구 원룸" },
-  { nm: "강남구 역삼동 투룸", pr: "보증금 2억 / 월세 80만", cs: ["역세권", "관리비 포함", "신축"], badge: "인기", b: 1, emoji: "🛋️", g: "linear-gradient(135deg,#e7e0f7,#d3c6ee)", q: "강남구 투룸" },
-  { nm: "서초구 서초동 오피스텔", pr: "보증금 1.5억 / 월세 70만", cs: ["역세권", "풀옵션", "주차가능"], badge: "추천", b: 0, emoji: "🏢", g: "linear-gradient(135deg,#dcecf7,#c2ddef)", q: "서초구 오피스텔" },
-  { nm: "성동구 성수동 원룸", pr: "보증금 8천만 / 월세 45만", cs: ["역세권", "리모델링", "즉시입주"], badge: "신규", b: 2, emoji: "🛏️", g: "linear-gradient(135deg,#dcf1e6,#c3e8d3)", q: "성동구 원룸" },
+  { nm: "마포구 서교동 원룸", pr: "보증금 1억 / 월세 50만", cs: ["역세권", "풀옵션", "즉시입주"], badge: "추천", b: 0, g: "linear-gradient(135deg,#dbe8fb,#c3d6f2)", q: "마포구 원룸", photo: U("1522708323590-d24dbb6b0267") },
+  { nm: "강남구 역삼동 투룸", pr: "보증금 2억 / 월세 80만", cs: ["역세권", "관리비 포함", "신축"], badge: "인기", b: 1, g: "linear-gradient(135deg,#e7e0f7,#d3c6ee)", q: "강남구 투룸", photo: U("1493809842364-78817add7ffb") },
+  { nm: "서초구 서초동 오피스텔", pr: "보증금 1.5억 / 월세 70만", cs: ["역세권", "풀옵션", "주차가능"], badge: "추천", b: 0, g: "linear-gradient(135deg,#dcecf7,#c2ddef)", q: "서초구 오피스텔", photo: U("1484154218962-a197022b5858") },
+  { nm: "성동구 성수동 원룸", pr: "보증금 8천만 / 월세 45만", cs: ["역세권", "리모델링", "즉시입주"], badge: "신규", b: 2, g: "linear-gradient(135deg,#dcf1e6,#c3e8d3)", q: "성동구 원룸", photo: U("1505691938895-1758d7feb511") },
 ];
 
-/* 우측 3D 씬 */
+/* 우측 3D 씬 — 실제 배경 이미지(도시+플랫폼) 위에 마스코트 배치 */
 function Scene() {
   return (
     <div className="scene" aria-hidden="true">
-      <div className="glow" />
-      {/* 블러 도시 */}
-      <svg className="city" viewBox="0 0 600 540" preserveAspectRatio="xMidYMax meet" fill="none">
-        <defs>
-          <linearGradient id="bd" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="#bcd4f5" /><stop offset="1" stopColor="#8fb6ea" />
-          </linearGradient>
-        </defs>
-        <g fill="url(#bd)" opacity="0.85">
-          <rect x="60" y="300" width="46" height="180" rx="4" />
-          <rect x="118" y="250" width="52" height="230" rx="4" />
-          <rect x="182" y="330" width="40" height="150" rx="4" />
-          <rect x="360" y="290" width="50" height="190" rx="4" />
-          <rect x="420" y="240" width="56" height="240" rx="4" />
-          <rect x="486" y="320" width="44" height="160" rx="4" />
-        </g>
-        {/* N타워 */}
-        <g stroke="#8fb6ea" strokeWidth="6" opacity="0.8">
-          <path d="M540 180 V420" />
-          <path d="M528 300 h24" />
-        </g>
-        <circle cx="540" cy="176" r="16" fill="#a9c8ef" />
-      </svg>
-      {/* 글래스 서클 */}
-      <div className="gcirc" style={{ width: 90, height: 90, right: 40, top: 70 }} />
-      <div className="gcirc" style={{ width: 54, height: 54, left: 40, top: 150 }} />
-      {/* 플로팅 아이콘 */}
-      <div className="fico" style={{ left: 70, top: 60 }}><Ic d={P.home} w={22} /></div>
-      <div className="fico" style={{ left: 130, top: 180, animationDelay: ".8s" }}><Ic d={P.report} w={22} /></div>
-      {/* 플랫폼 */}
-      <svg className="platform" viewBox="0 0 300 90" fill="none">
-        <ellipse cx="150" cy="45" rx="145" ry="40" fill="#cfe0f8" />
-        <ellipse cx="150" cy="38" rx="120" ry="30" fill="#e8f1fd" />
-      </svg>
-      <img className="masc" src="/mascot.png" alt=""
+      <img className="scene-bg" src="/scene-bg.png" alt=""
+        onError={(e) => { e.currentTarget.style.display = "none"; }} />
+      <img className="masc" src="/mascot-3d.png" alt=""
         onError={(e) => { e.currentTarget.style.display = "none"; }} />
     </div>
   );
 }
 
-export default function Home({ onNavigate }) {
+export default function Home({ onNavigate, isFav = () => false, toggleFav = () => {} }) {
   const [q, setQ] = useState("");
   const submit = () => onNavigate("search", q.trim());
 
   return (
     <div className="home">
-      <button className="bell" aria-label="알림">
-        <Ic d={P.bell} w={22} />
-        <span className="dot">3</span>
-      </button>
-
       <section className="hero2">
         <div className="hero-left">
-          <span className="pill"><Ic d={P.sparkle} w={14} /> REAL ESTATE AI</span>
           <h1>안전한 방 찾기부터<br /><span className="accent">계약서 검토</span>까지, 한 번에</h1>
           <p className="sub">
             자연어로 조건을 말하면 AI가 매물을 찾아주고,<br />
@@ -125,7 +89,7 @@ export default function Home({ onNavigate }) {
             <span className="sub"><Ic d={P.user} w={15} /> 맞춤 추천</span>
           </div>
           <span className="link">매물 검색 시작하기 →</span>
-          <BuildingIllust />
+          <img className="illust" src="/illust-search.png" alt="" onError={(e) => { e.currentTarget.style.display = "none"; }} />
         </button>
 
         <button className="feat green" onClick={() => onNavigate("contract")}>
@@ -142,7 +106,7 @@ export default function Home({ onNavigate }) {
             <span className="sub"><Ic d={P.report} w={15} /> 요약 리포트</span>
           </div>
           <span className="link">계약서 검토하기 →</span>
-          <DocIllust />
+          <img className="illust" src="/illust-contract.png" alt="" onError={(e) => { e.currentTarget.style.display = "none"; }} />
         </button>
       </div>
 
@@ -153,11 +117,13 @@ export default function Home({ onNavigate }) {
       <div className="rec-grid">
         {RECS.map((r, i) => (
           <div key={i} className="rec-card" onClick={() => onNavigate("search", r.q)}>
-            <div className="rec-photo">
-              <div className="ph" style={{ background: r.g }}>{r.emoji}</div>
+            <div className="rec-photo" style={{ background: r.g }}>
+              <img className="ph-img" src={r.photo} alt="" loading="lazy"
+                onError={(e) => { e.currentTarget.style.display = "none"; }} />
               <span className={`rec-badge b${r.b}`}>{r.badge}</span>
-              <button className="heart" aria-label="찜" onClick={(e) => e.stopPropagation()}>
-                <Ic d={P.heart} w={17} />
+              <button className="heart" aria-label="찜하기"
+                onClick={(e) => { e.stopPropagation(); toggleFav({ id: r.nm, title: r.nm, sub: r.pr, chips: r.cs, photo: r.photo }); }}>
+                <Star on={isFav(r.nm)} size={18} />
               </button>
             </div>
             <div className="rec-body">

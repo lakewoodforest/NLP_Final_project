@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { api } from "../api.js";
-import { Card, Chip, Head, fmt } from "../components/ui.jsx";
+import { Card, Chip, Head, Star, fmt } from "../components/ui.jsx";
 
 const EXAMPLES = [
   "마포구 원룸 월세 60만원 이하 역세권으로 찾아줘",
@@ -25,7 +25,7 @@ function buildBody(slots) {
   return body;
 }
 
-export default function Search({ initialQuery = "" }) {
+export default function Search({ initialQuery = "", isFav = () => false, toggleFav = () => {} }) {
   const [utter, setUtter] = useState("");
   const [loading, setLoading] = useState(false);
   const [intent, setIntent] = useState(null);
@@ -73,7 +73,7 @@ export default function Search({ initialQuery = "" }) {
   const slotEntries = slots ? Object.entries(slots).filter(([, v]) => v !== null && v !== "") : [];
 
   return (
-    <section>
+    <section className="tool-page search-page">
       <Head
         eyebrow="매물 검색"
         title="어떤 방을 찾고 계세요?"
@@ -111,7 +111,7 @@ export default function Search({ initialQuery = "" }) {
 
       {/* 이해한 조건 */}
       {!loading && intent === "매물검색" && slots && (
-        <Card className="mb" style={{ padding: "12px 16px" }}>
+        <Card className="mb search-insight" style={{ padding: "12px 16px" }}>
           <span style={{ fontSize: 13.5 }}>
             {slotEntries.length
               ? <>이해한 조건 {slotEntries.map(([k, v]) => (
@@ -145,7 +145,17 @@ export default function Search({ initialQuery = "" }) {
           ) : (
             <div className="listings-grid">
               {res.items.map((x, i) => (
-                <div key={i} className="listing">
+                <div key={i} className="listing" style={{ position: "relative" }}>
+                  <button className="fav-star" aria-label="찜하기"
+                    onClick={() => toggleFav({
+                      id: `${x.지역}-${x.주거유형}-${x.보증금}-${x.월세}-${x.평수}`,
+                      title: `${x.지역} ${x.주거유형}`,
+                      sub: x.거래유형 === "전세" ? `전세 ${fmt(x.보증금)}만원` : `월세 ${x.월세}만 · 보증금 ${fmt(x.보증금)}만원`,
+                      chips: [x.층조건, x.근접시설].filter(Boolean),
+                      emoji: HOME_EMOJI[x.주거유형] || "🏠",
+                    })}>
+                    <Star on={isFav(`${x.지역}-${x.주거유형}-${x.보증금}-${x.월세}-${x.평수}`)} size={18} />
+                  </button>
                   <div className="thumb">{HOME_EMOJI[x.주거유형] || "🏠"}</div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <p className="price">
