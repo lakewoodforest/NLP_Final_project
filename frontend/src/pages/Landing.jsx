@@ -17,6 +17,47 @@ function Logo() {
   );
 }
 
+function Mascot({ style }) {
+  const NAVY = "#16265c", BLUE = "#aac3ea", W = "#ffffff";
+  return (
+    <svg viewBox="0 0 200 268" style={style} xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      {/* 등껍질 */}
+      <ellipse cx="134" cy="152" rx="47" ry="53" fill={BLUE} stroke={NAVY} strokeWidth="5" />
+      <polygon points="134,116 168,137 168,167 134,188 100,167 100,137" fill="none" stroke="#7f9fd0" strokeWidth="3" />
+      <path d="M134 116 L134 152 M100 137 L134 152 L168 137 M100 167 L134 152 L168 167" fill="none" stroke="#7f9fd0" strokeWidth="2.5" />
+      {/* 다리 */}
+      <rect x="74" y="216" width="22" height="38" rx="11" fill={W} stroke={NAVY} strokeWidth="5" />
+      <rect x="104" y="216" width="22" height="38" rx="11" fill={W} stroke={NAVY} strokeWidth="5" />
+      {/* 후드 몸통 */}
+      <path d="M58 160 Q58 128 100 128 Q142 128 142 160 L142 214 Q142 228 126 228 L74 228 Q58 228 58 214 Z" fill={NAVY} />
+      {/* 끈 리본 */}
+      <path d="M100 146 q-13 -7 -15 4 q11 5 15 -4" fill={W} />
+      <path d="M100 146 q13 -7 15 4 q-11 5 -15 -4" fill={W} />
+      <circle cx="100" cy="146" r="4.5" fill={W} />
+      <path d="M96 150 L93 166 M104 150 L107 166" stroke={W} strokeWidth="3" strokeLinecap="round" />
+      {/* HSU */}
+      <text x="100" y="192" textAnchor="middle" fill={W} fontSize="19" fontWeight="800" fontFamily="Arial, sans-serif" letterSpacing="1">HSU</text>
+      {/* 손 */}
+      <ellipse cx="70" cy="200" rx="14" ry="15" fill={W} stroke={NAVY} strokeWidth="5" />
+      <ellipse cx="130" cy="200" rx="14" ry="15" fill={W} stroke={NAVY} strokeWidth="5" />
+      {/* 후드 머리 */}
+      <path d="M100 30 q-9 -8 -1 -16 q9 8 1 16" fill={NAVY} />
+      <circle cx="100" cy="82" r="47" fill={NAVY} />
+      <circle cx="100" cy="87" r="38" fill={W} />
+      {/* 볼 */}
+      <ellipse cx="79" cy="95" rx="13" ry="8.5" fill={BLUE} />
+      <ellipse cx="121" cy="95" rx="13" ry="8.5" fill={BLUE} />
+      {/* 눈 */}
+      <circle cx="86" cy="84" r="3.8" fill={NAVY} />
+      <circle cx="114" cy="84" r="3.8" fill={NAVY} />
+      {/* 입 (ᴥ) */}
+      <path d="M91 92 q4.5 7 9 1 q4.5 7 9 -1" fill="none" stroke={NAVY} strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round" />
+      {/* 이마 애교머리 */}
+      <path d="M95 68 q5 -7 9 -2 q-3 4 -7 4" fill="none" stroke={NAVY} strokeWidth="3" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 function SearchIcon() {
   return (
     <svg width="30" height="30" viewBox="0 0 32 32" fill="none" stroke="#2b6ff3" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
@@ -72,7 +113,22 @@ export default function Landing({ onNavigate }) {
         <path d="M0 220V150h70v-34h46v54h60V96h54v40h58V70h50v66h64v-40h48v40h70V120h56v34h60V88h52v66h66v-30h46v30h72V150h60v70H0Z" />
       </svg>
 
-      <div style={{ position: "relative", textAlign: "center", color: "#fff", marginBottom: 44 }}>
+      {/* 마스코트 — 블러 없이, 안쪽(텍스트 쪽) 가장자리만 살짝 투명하게 자연스럽게.
+          frontend/public/mascot.png 필요. 파일 없으면 자동 숨김. */}
+      <img src="/mascot.png" alt="한입 부동산 마스코트"
+        onError={(e) => { e.currentTarget.style.display = "none"; }}
+        style={{
+          position: "absolute", right: "23%", top: "40%",
+          transform: "translateY(-44%) rotate(-8deg)",
+          width: "min(31%, 300px)", height: "auto",
+          zIndex: 1, pointerEvents: "none",
+          filter: "drop-shadow(0 14px 24px rgba(8,24,60,.26))",
+          WebkitMaskImage: "linear-gradient(to right, rgba(0,0,0,0.4) 0%, #000 28%)",
+          maskImage: "linear-gradient(to right, rgba(0,0,0,0.4) 0%, #000 28%)",
+        }}
+      />
+
+      <div style={{ position: "relative", zIndex: 1, textAlign: "center", color: "#fff", marginBottom: 44 }}>
         <div style={{ fontSize: 11, letterSpacing: "0.4em", fontWeight: 700, opacity: 0.75, marginBottom: 18 }}>
           REAL ESTATE AI
         </div>
@@ -104,6 +160,7 @@ export default function Landing({ onNavigate }) {
       <div
         style={{
           position: "relative",
+          zIndex: 1,
           display: "grid",
           gridTemplateColumns: "repeat(auto-fit, minmax(240px, 300px))",
           gap: 22,

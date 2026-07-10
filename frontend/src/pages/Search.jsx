@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { api } from "../api.js";
 import { Card, Chip, Head, fmt } from "../components/ui.jsx";
 
@@ -25,7 +25,7 @@ function buildBody(slots) {
   return body;
 }
 
-export default function Search() {
+export default function Search({ initialQuery = "" }) {
   const [utter, setUtter] = useState("");
   const [loading, setLoading] = useState(false);
   const [intent, setIntent] = useState(null);
@@ -64,6 +64,11 @@ export default function Search() {
       try { await doSearch(slots, v); } catch (er) { setErr(String(er.message)); }
     }
   };
+
+  useEffect(() => {
+    if (initialQuery) run(initialQuery);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialQuery]);
 
   const slotEntries = slots ? Object.entries(slots).filter(([, v]) => v !== null && v !== "") : [];
 
