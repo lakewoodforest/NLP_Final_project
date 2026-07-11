@@ -52,7 +52,12 @@ def main():
         pred = extract_slots(r["utterance"]).get("slots", {})
         all_ok = True
         for s in SLOTS:
-            ok = _match(s, r.get(f"true_{s}", ""), pred.get(s))
+            if s == "지역":
+                # 데이터가 지역구/지역동으로 분리됨 → 둘 중 하나라도 정답과 맞으면 인정
+                pv = pred.get("지역구") or pred.get("지역동")
+                ok = _match(s, r.get("true_지역", ""), pv)
+            else:
+                ok = _match(s, r.get(f"true_{s}", ""), pred.get(s))
             per[s] += int(ok)
             all_ok = all_ok and ok
         exact += int(all_ok)

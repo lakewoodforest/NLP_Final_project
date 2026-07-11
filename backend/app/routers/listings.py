@@ -8,7 +8,8 @@ router = APIRouter(prefix="/api/listings", tags=["listings"])
 
 
 class SearchBody(BaseModel):
-    지역: str | None = None
+    지역구: str | None = None
+    지역동: str | None = None
     거래유형: str | None = None
     주거유형: str | None = None
     층조건: str | None = None

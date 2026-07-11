@@ -64,8 +64,8 @@ export default function App() {
 
           <nav className="sb-nav roomy">
             {NAV.map((n) => (
-              <button key={n.id} className={tab === n.id ? "on" : ""} onClick={() => go(n.id)}>
-                <NavIcon name={n.icon} />
+              <button key={n.id} className={`nav-${n.id}${tab === n.id ? " on" : ""}`} onClick={() => go(n.id)}>
+                <span className="nav-ic"><NavIcon name={n.icon} /></span>
                 {n.label}
                 {n.id === "favorite" && favs.length > 0 && <span className="sb-count">{favs.length}</span>}
               </button>

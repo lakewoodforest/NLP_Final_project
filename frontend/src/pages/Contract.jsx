@@ -57,9 +57,9 @@ export default function Contract() {
         </div>
       )}
       {c.explanation && (
-        <div style={{ marginLeft: 4, marginTop: 8, padding: "10px 13px", background: "var(--bg)", borderLeft: "3px solid var(--blue)", borderRadius: 8, fontSize: 13.5, lineHeight: 1.65 }}>
-          <b style={{ color: "var(--blue)" }}>💬 AI 설명</b>
-          <p style={{ marginTop: 4 }}>{c.explanation}</p>
+        <div className="ai-explain">
+          <b>💬 AI 설명</b>
+          <p>{c.explanation}</p>
         </div>
       )}
     </div>
@@ -133,9 +133,9 @@ export default function Contract() {
               </div>
             )}
             {judged.explanation && (
-              <div className="mt" style={{ padding: "12px 14px", background: "var(--bg)", borderLeft: "3px solid var(--blue)", borderRadius: 8, lineHeight: 1.65 }}>
-                <b style={{ color: "var(--blue)" }}>💬 AI 설명</b>
-                <p style={{ marginTop: 4 }}>{judged.explanation}</p>
+              <div className="ai-explain mt">
+                <b>💬 AI 설명</b>
+                <p>{judged.explanation}</p>
               </div>
             )}
           </div>

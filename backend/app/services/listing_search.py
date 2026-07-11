@@ -1,9 +1,8 @@
-"""매물 검색 서비스 — 원본 real_estate_slot/langchain_pipeline.py 의
-search_listings() 로직 포팅 (결정론적 코드, LLM 아님).
+"""매물 검색 서비스 (결정론적 코드, LLM 아님).
 
-- 정형 필터(지역·거래유형·주거유형·층조건·근접시설·가격·면적·보증금)는 하드 필터.
-- '기타' 자유조건(예: 반려동물 가능, 조용한 동네)이 들어오면 원본과 동일하게
-  '설명' 컬럼과의 유사도로 결과를 재정렬한다.
+실제 데이터가 '지역구' / '지역동' 두 컬럼으로 분리돼 있어 지역 필터도 두 슬롯으로 처리.
+- 정형 필터(지역구·지역동·거래유형·주거유형·층조건·근접시설·가격·면적·보증금)는 하드 필터.
+- '기타' 자유조건(반려동물·조용함 등)은 '설명' 컬럼과의 유사도로 결과를 재정렬한다.
     · sentence-transformers 설치 시 임베딩 코사인 유사도(engine="embed")
     · 미설치 시 문자 2-gram 자카드 유사도 폴백(engine="lexical")
 """
@@ -34,7 +33,6 @@ def _grams(t: str) -> set:
 
 @lru_cache(maxsize=1)
 def _load_embedder():
-    """설치돼 있으면 임베딩 모델, 아니면 None → 어휘 폴백."""
     try:
         from sentence_transformers import SentenceTransformer
         return SentenceTransformer(_EMBED_MODEL_NAME)
@@ -63,53 +61,61 @@ def _rank_by_etc(df: pd.DataFrame, etc: str) -> tuple[pd.DataFrame, str]:
     return out, engine
 
 
+def _contains(series: pd.Series, query: str) -> pd.Series:
+    q = str(query).replace("서울", "").strip()
+    return series.astype(str).apply(
+        lambda v: q in v.replace("서울", "").strip() or v.replace("서울", "").strip() in q
+    )
+
+
 def search_listings(slots: dict) -> tuple[pd.DataFrame, str]:
-    result = load_listings().copy()
+    df = load_listings().copy()
 
-    지역 = slots.get("지역")
-    if 지역:
-        query = str(지역).replace("서울", "").strip()
-        result = result[result["지역"].astype(str).apply(
-            lambda v: query in v.replace("서울", "").strip()
-            or v.replace("서울", "").strip() in query
-        )]
+    # 지역: 지역구(정확) / 지역동(포함). 하나라도 없으면 그 조건은 건너뜀.
+    지역구 = slots.get("지역구")
+    지역동 = slots.get("지역동")
+    if 지역구 and "지역구" in df.columns:
+        df = df[_contains(df["지역구"], 지역구)]
+    if 지역동 and "지역동" in df.columns:
+        df = df[_contains(df["지역동"], 지역동)]
+
     for key in ("거래유형", "주거유형", "층조건", "근접시설"):
-        if slots.get(key):
-            result = result[result[key] == slots[key]]
-    if slots.get("가격_최대") is not None:
-        result = result[result["월세"] <= slots["가격_최대"]]
-    if slots.get("가격_최소") is not None:
-        result = result[result["월세"] >= slots["가격_최소"]]
-    if slots.get("면적_최소") is not None:
-        result = result[result["평수"] >= slots["면적_최소"]]
-    if slots.get("보증금_최대") is not None:
-        result = result[result["보증금"] <= slots["보증금_최대"]]
+        if slots.get(key) and key in df.columns:
+            df = df[df[key] == slots[key]]
 
-    # '기타' 자유조건: 필터 통과 후보 안에서 설명 유사도로 재정렬 (원본 로직)
+    if slots.get("가격_최대") is not None:
+        df = df[df["월세"] <= slots["가격_최대"]]
+    if slots.get("가격_최소") is not None:
+        df = df[df["월세"] >= slots["가격_최소"]]
+    if slots.get("면적_최소") is not None:
+        df = df[df["평수"] >= slots["면적_최소"]]
+    if slots.get("보증금_최대") is not None:
+        df = df[df["보증금"] <= slots["보증금_최대"]]
+
     rank_engine = "none"
     etc = (slots.get("기타") or "").strip()
     if etc:
-        result, rank_engine = _rank_by_etc(result, etc)
-    return result, rank_engine
+        df, rank_engine = _rank_by_etc(df, etc)
+    return df, rank_engine
 
 
 _SORTS = {
-    "deposit": ("보증금", True),   # 보증금 낮은순
-    "rent": ("월세", True),        # 월세 낮은순
-    "area": ("평수", False),       # 면적 넓은순
+    "deposit": ("보증금", True), "deposit_asc": ("보증금", True), "deposit_desc": ("보증금", False),
+    "rent": ("월세", True), "rent_asc": ("월세", True), "rent_desc": ("월세", False),
+    "area": ("평수", False), "area_desc": ("평수", False), "area_asc": ("평수", True),
 }
 
 
 def search_response(slots: dict, top_n: int = 12, sort: str | None = None) -> dict:
     df, rank_engine = search_listings(slots)
-    if sort in _SORTS and not df.empty:
+    if sort in _SORTS and not df.empty and _SORTS[sort][0] in df.columns:
         col, asc = _SORTS[sort]
         df = df.sort_values(col, ascending=asc)
     items = json.loads(df.head(top_n).to_json(orient="records", force_ascii=False))
-    region_counts = [
-        {"name": r, "count": int((df["지역"] == r).sum())}
-        for r in CATEGORICAL_SLOTS["지역"]
-    ]
+    region_counts = (
+        [{"name": r, "count": int((df["지역구"] == r).sum())} for r in CATEGORICAL_SLOTS["지역구"]]
+        if "지역구" in df.columns else []
+    )
     return {
         "total": int(len(df)),
         "items": items,

@@ -1,7 +1,7 @@
 """자연어 발화 → (의도 분류 + 슬롯 추출).
 
-GOOGLE_API_KEY + google-genai 가 있으면 원본 프로젝트 ①과 동일하게 Gemini 를 쓰고,
-없으면 규칙 기반 폴백으로 동작한다.
+지역은 '지역구'(구) / '지역동'(동) 두 슬롯으로 분리해서 추출한다.
+GOOGLE_API_KEY + google-genai 가 있으면 Gemini(few-shot)로, 없으면 규칙 기반 폴백.
 
 반환: {"intent": "매물검색"|"잡담", "slots": {...}, "engine": "gemini"|"rule-based"}
 """
@@ -17,28 +17,24 @@ _FACILITY_ALIASES = {
     "마트": "마트 도보 5분", "버스": "버스정류장 인접",
 }
 
-# 랜드마크/동 이름 → 6개 지원 구 매핑
+# 랜드마크/별칭 → 구
 _REGION_ALIASES = {
     "홍대": "마포구", "합정": "마포구", "연남": "마포구", "망원": "마포구",
     "성수": "성동구", "왕십리": "성동구", "서울숲": "성동구",
     "잠실": "송파구", "석촌": "송파구", "가락": "송파구",
-    "신림": "관악구", "봉천": "관악구", "서울대": "관악구", "샤로수길": "관악구",
+    "신림": "관악구", "봉천": "관악구", "서울대": "관악구",
     "상계": "노원구", "공릉": "노원구", "중계": "노원구",
     "역삼": "강남구", "삼성": "강남구", "논현": "강남구", "대치": "강남구",
 }
 
-# 부정 표현 (예: "반지하 말고")
 _NEG_WORDS = ("말고", "말구", "빼고", "제외", "싫", "아닌", "아니", "없")
 
+# 'XX동' 정규식이 지역이 아닌 단어(반려동물·이동 등)를 오탐하지 않도록 차단
+_DONG_BLOCK = {
+    "반려동", "이동", "출동", "활동", "운동", "행동", "노동", "자동", "수동",
+    "공동", "감동", "작동", "부동", "생동", "약동", "고동", "진동",
+}
 
-def _negated(u: str, term: str) -> bool:
-    i = u.find(term)
-    if i < 0:
-        return False
-    window = u[i + len(term): i + len(term) + 6]
-    return any(n in window for n in _NEG_WORDS)
-
-# 자유조건(기타) 키워드 → 설명 유사도 검색용 표준 문구
 _ETC_RULES = [
     (["반려동물", "강아지", "고양이", "펫", "댕댕이", "냥이", "애완"], "반려동물 가능"),
     (["주차"], "주차 가능"),
@@ -49,16 +45,23 @@ _ETC_RULES = [
     (["보안", "치안", "안전"], "치안 좋은"),
 ]
 
-# 의도 판별용 부동산 관련 힌트
 _INTENT_HINTS = (
-    list(CATEGORICAL_SLOTS["지역"])
+    list(CATEGORICAL_SLOTS["지역구"])
     + list(CATEGORICAL_SLOTS["주거유형"])
     + ["전세", "월세", "보증금", "방", "집", "매물", "평", "역세권", "자취",
-       "이사", "입주", "원룸", "투룸", "오피스텔", "전월세", "구해", "찾"]
+       "이사", "입주", "원룸", "투룸", "오피스텔", "전월세", "구해", "찾", "동"]
 )
 
 _MAX_SUFFIX = r"(?:이하|이내|까지|밑|아래|미만|안쪽|넘지\s*않)"
 _MIN_SUFFIX = r"(?:이상|초과|넘게|넘어)"
+
+
+def _negated(u: str, term: str) -> bool:
+    i = u.find(term)
+    if i < 0:
+        return False
+    window = u[i + len(term): i + len(term) + 6]
+    return any(n in window for n in _NEG_WORDS)
 
 
 def _val(num: str, unit: str | None) -> int:
@@ -67,31 +70,47 @@ def _val(num: str, unit: str | None) -> int:
         return n * 10000
     if unit and "천" in unit:
         return n * 1000
-    return n  # 만원 단위(기본)
+    return n
 
 
 def _find_amount(u: str, keyword: str | None, suffix: str) -> int | None:
-    """keyword(보증금/월세) 뒤에 오는 금액+접미사(이하/이상)를 찾는다.
-    keyword 가 None 이면 문장 전체에서 첫 금액을 찾는다."""
     amount = r"(\d[\d,]*)\s*(억|천만?|만)?\s*원?\s*"
     pat = (re.escape(keyword) + r"[^\d]{0,6}" if keyword else "") + amount + suffix
     m = re.search(pat, u)
     return _val(m.group(1), m.group(2)) if m else None
 
 
+def _extract_region(u: str, s: dict) -> None:
+    """지역구 / 지역동을 각각 추출. (둘 다 나올 수 있음: 예 '강남구 역삼동')"""
+    # 지역구: 목록 매칭 (강남 → 강남구 도 허용)
+    for gu in CATEGORICAL_SLOTS["지역구"]:
+        if gu in u or gu.replace("구", "") in u:
+            s["지역구"] = gu
+            break
+    else:
+        for alias, gu in _REGION_ALIASES.items():
+            if alias in u:
+                s["지역구"] = gu
+                break
+    # 지역동: 목록 우선, 없으면 'XX동' 패턴
+    for dong in CATEGORICAL_SLOTS["지역동"]:
+        if dong in u:
+            s["지역동"] = dong
+            break
+    else:
+        # 목록에 없는 동은 'XX동' 패턴으로. 단, 동 뒤에 한글이 더 오면(반려동물 등) 제외하고,
+        # 지역이 아닌 흔한 단어(_DONG_BLOCK)도 걸러낸다.
+        m = re.search(r"([가-힣]{1,4}동)(?![가-힣])", u)
+        if m and "지역동" not in s and m.group(1) not in _DONG_BLOCK:
+            s["지역동"] = m.group(1)
+
+
 def _rule_based(utterance: str) -> dict:
     u = utterance
     s: dict = {}
 
-    for r in CATEGORICAL_SLOTS["지역"]:
-        if r in u or r.replace("구", "") in u:
-            s["지역"] = r
-            break
-    else:
-        for alias, region in _REGION_ALIASES.items():
-            if alias in u:
-                s["지역"] = region
-                break
+    _extract_region(u, s)
+
     if "전세" in u:
         s["거래유형"] = "전세"
     elif "월세" in u:
@@ -109,7 +128,6 @@ def _rule_based(utterance: str) -> dict:
             s["근접시설"] = v
             break
 
-    # ── 금액: 보증금 / 월세 구분 ──
     v = _find_amount(u, "보증금", _MAX_SUFFIX)
     if v is not None:
         s["보증금_최대"] = v
@@ -119,8 +137,6 @@ def _rule_based(utterance: str) -> dict:
     v = _find_amount(u, "월세", _MIN_SUFFIX)
     if v is not None:
         s["가격_최소"] = v
-    # 보증금/월세 키워드 없이 그냥 "N 이하" → 전세거나 금액이 크면(≥300만원) 보증금,
-    # 아니면 월세로 해석 (월세가 300만원 이상인 경우는 드물다는 휴리스틱)
     if "보증금_최대" not in s and "가격_최대" not in s:
         v = _find_amount(u, None, _MAX_SUFFIX)
         if v is not None:
@@ -152,14 +168,44 @@ def _rule_based(utterance: str) -> dict:
     return s
 
 
+def _normalize_region(slots: dict) -> dict:
+    """Gemini 등이 옛 '지역' 키를 내보내면 지역구/지역동으로 정규화한다."""
+    if "지역" in slots and slots["지역"]:
+        val = str(slots.pop("지역")).strip()
+        if val.endswith("구") or val in CATEGORICAL_SLOTS["지역구"]:
+            slots.setdefault("지역구", val)
+        elif val.endswith("동") or val in CATEGORICAL_SLOTS["지역동"]:
+            slots.setdefault("지역동", val)
+        else:
+            slots.setdefault("지역구", val)  # 애매하면 구로
+    return slots
+
+
 def _rule_intent(utterance: str) -> str:
     return "매물검색" if any(h in utterance for h in _INTENT_HINTS) else "잡담"
 
 
-# ── Gemini 경로 ──────────────────────────────────────────────
+# ── Gemini ──────────────────────────────────────────────
 def _gemini_client():
     from google import genai  # type: ignore
     return genai.Client()
+
+
+_FEW_SHOT = """
+아래 예시를 참고해 슬롯을 추출하라. 지역은 구 이름이면 "지역구", 동 이름이면 "지역동"으로 넣어라.
+
+발화: "성동구에서 월 50에 우리 강아지랑 살만한 곳 있을까요"
+JSON: {"지역구": "성동구", "거래유형": "월세", "가격_최대": 50, "기타": "반려동물 가능"}
+
+발화: "강남구 역삼동 원룸 전세 보증금 1억 이하 역세권"
+JSON: {"지역구": "강남구", "지역동": "역삼동", "거래유형": "전세", "주거유형": "원룸", "보증금_최대": 10000, "근접시설": "역세권"}
+
+발화: "노원구 월세 50 이하 주차되는 조용한 투룸 구해요"
+JSON: {"지역구": "노원구", "거래유형": "월세", "주거유형": "투룸", "가격_최대": 50, "기타": "주차 가능, 조용한 동네"}
+
+발화: "안녕하세요 날씨 좋네요"
+JSON: {}
+"""
 
 
 def _gemini_slots(utterance: str) -> dict | None:
@@ -168,13 +214,15 @@ def _gemini_slots(utterance: str) -> dict | None:
         prompt = (
             "다음 부동산 검색 발화에서 슬롯을 JSON으로 추출하라. 언급되지 않은 슬롯은 생략. "
             "가격은 만원 단위 정수. '보증금 N 이하'는 보증금_최대, '월세 N 이하'는 가격_최대로 구분하라. "
-            "반려동물/주차/조용함 등 자유조건은 '기타'에 짧게 요약하라. 스키마: "
-            + json.dumps(schema, ensure_ascii=False)
+            "지역은 구 이름이면 '지역구', 동 이름이면 '지역동'으로 넣어라. "
+            "반려동물/주차/조용함 등 자유조건은 '기타'에 짧게 요약하라. 애매하면 생략.\n스키마: "
+            + json.dumps(schema, ensure_ascii=False) + _FEW_SHOT
             + "\n발화: " + utterance + "\nJSON만 출력:"
         )
         resp = _gemini_client().models.generate_content(
             model=os.getenv("GEMINI_MODEL", "gemini-2.5-flash"), contents=prompt)
-        return json.loads(re.sub(r"```json|```", "", resp.text).strip())
+        got = json.loads(re.sub(r"```json|```", "", resp.text).strip())
+        return _normalize_region(got)
     except Exception:
         return None
 
