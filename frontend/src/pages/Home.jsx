@@ -59,7 +59,7 @@ export default function Home({ onNavigate, isFav = () => false, toggleFav = () =
           </p>
           <div className="home-search">
             <Ic d={P.search} w={20} />
-            <input value={q} onChange={(e) => setQ(e.target.value)}
+            <input aria-label="원하는 매물 조건" enterKeyHint="search" value={q} onChange={(e) => setQ(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && submit()}
               placeholder="원하는 지역, 조건을 자연어로 입력해보세요" />
             <button className="ai-btn" onClick={submit}><Ic d={P.sparkle} w={16} /> AI로 검색하기</button>

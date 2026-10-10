@@ -172,7 +172,7 @@ export default function Search({ initialQuery = "", isFav = () => false, toggleF
 
       <div className="searchbar mb">
         <input
-          type="text" value={utter} autoFocus
+          type="text" value={utter} aria-label="매물 검색 조건" enterKeyHint="search"
           onChange={(e) => setUtter(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && run()}
           placeholder="예: 관악구에 보증금 1000만원 이하로 방 구해줘"

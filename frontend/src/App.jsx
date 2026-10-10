@@ -55,16 +55,16 @@ export default function App() {
     <div className="app-bg">
       <div className="shell">
         <aside className="sidebar">
-          <div className="sb-brand" style={{ cursor: "pointer" }} onClick={() => go("home")}>
+          <button type="button" className="sb-brand" aria-label="한입 부동산 홈" onClick={() => go("home")}>
             <div className="mark" aria-hidden="true" />
             <div>
               <b>한입 부동산</b>
             </div>
-          </div>
+          </button>
 
-          <nav className="sb-nav roomy">
+          <nav className="sb-nav roomy" aria-label="주 메뉴">
             {NAV.map((n) => (
-              <button key={n.id} className={`nav-${n.id}${tab === n.id ? " on" : ""}`} onClick={() => go(n.id)}>
+              <button key={n.id} aria-current={tab === n.id ? "page" : undefined} className={`nav-${n.id}${tab === n.id ? " on" : ""}`} onClick={() => go(n.id)}>
                 <span className="nav-ic"><NavIcon name={n.icon} /></span>
                 {n.label}
                 {n.id === "favorite" && favs.length > 0 && <span className="sb-count">{favs.length}</span>}
