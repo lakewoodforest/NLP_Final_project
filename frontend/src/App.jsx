@@ -3,6 +3,7 @@ import Home from "./pages/Home.jsx";
 import Search from "./pages/Search.jsx";
 import Contract from "./pages/Contract.jsx";
 import Favorites from "./pages/Favorites.jsx";
+import Intro from "./components/Intro.jsx";
 
 const I = {
   home: "M4 11 12 4l8 7M6 10v9h12v-9",
@@ -30,7 +31,16 @@ const loadFavs = () => {
   try { return JSON.parse(localStorage.getItem("hanip_favs") || "[]"); } catch { return []; }
 };
 
+const shouldShowIntro = () => {
+  if (new URLSearchParams(window.location.search).get("skipIntro") === "1") return false;
+  // The installed iPhone app already plays this video before opening its WKWebView.
+  const ua = navigator.userAgent;
+  const nativeIosWebView = /iP(hone|ad|od)/.test(ua) && /AppleWebKit/.test(ua) && !/Safari/.test(ua);
+  return !nativeIosWebView;
+};
+
 export default function App() {
+  const [showIntro, setShowIntro] = useState(shouldShowIntro);
   const [tab, setTab] = useState("home");
   const [query, setQuery] = useState("");
   const [favs, setFavs] = useState(loadFavs);
@@ -52,7 +62,8 @@ export default function App() {
   };
 
   return (
-    <div className="app-bg">
+    <>
+    <div className="app-bg" aria-hidden={showIntro} inert={showIntro ? "" : undefined}>
       <div className="shell">
         <aside className="sidebar">
           <button type="button" className="sb-brand" aria-label="한입 부동산 홈" onClick={() => go("home")}>
@@ -82,5 +93,7 @@ export default function App() {
         </main>
       </div>
     </div>
+    {showIntro && <Intro onContinue={() => setShowIntro(false)} />}
+    </>
   );
 }
